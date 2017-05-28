@@ -8,7 +8,7 @@ function MLP
 	S1 = 2
 	[Q, R] = size(tabla);
 	[Q, S2] = size(t);
-	disp(sprintf("Arquitectura %d-%d-%d", R, S1, S2))
+	disp(sprintf('Arquitectura %d-%d-%d', R, S1, S2))
 	
 	W1 = [-0.27; -0.41];
 	b1 = [-0.48; -0.13];
@@ -39,7 +39,7 @@ function MLP
 			W1 = W1 - alpha*s1*(tabla(:, m).');
 			b1 = b1 - alpha*s1;
 		end
-		it += 1;
+		it = it+1;
 	end
 	disp(toc())
 	a = zeros(1, Q)
