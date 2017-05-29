@@ -1,30 +1,51 @@
 function MLP
-	nombreArchivoTabla = input('Escriba el archivo con los datos del conjunto de entrenamiento: ', 's');
-	nombreArchivoTargets =  input('Escriba el archivo con los targets: ', 's');
-	itmax = input('N鷐ero de iteraciones m醲imas: ');
+	nombreArchivo = input('Escriba el archivo con el conjunto de entrenamiento: ', 's');
+	itmax = input('N煤mero de iteraciones m谩ximas: ');
 	alpha = input('Factor de aprendizaje: ');
-    error = input('Error de iteraci髇: ');  
-	tabla = load(nombreArchivoTabla);
-	t= load(nombreArchivoTargets);
-	S1 = 2
+    error = input('Error de iteraci贸n: ');
+    porcentajeDatos = input('Porcentaje de datos a utilizar (1-100%): ');
+	S1 = input('Ingrese el n煤mero de neuronas de la capa oculta: ');
+	datos_sin_normalizar = load(nombreArchivo);
+	disp(size(datos_sin_normalizar));
+
+	[tablaTotal, minTabla, maxTabla, muTabla, sigmaTabla] = featureNormalize(datos_sin_normalizar);
+
+	disp(size(tablaTotal));
+
+    [Q, R] = size(tablaTotal);
+
+	selectedRows =randperm(Q, ceil((porcentajeDatos/100.0)*Q));
+
+
+	tablaTotal = tablaTotal(selectedRows, :);
+
+
+	tabla = tablaTotal(:, 1);
+
+	t = tablaTotal(:, 2);
+
 	[Q, R] = size(tabla);
+
+	disp(sprintf( 'Se usan %d filas.', Q));
+
 	[Q, S2] = size(t);
-	disp(sprintf('Arquitectura %d-%d-%d', R, S1, S2))
-	
-	W1 = [-0.27; -0.41];
-	b1 = [-0.48; -0.13];
-	W2 = [0.09, -0.17];
-	b2 = [0.48];
-	
-	%W1 = rand(S1, R)
-	%b1 = rand(S1, 1)
-	%W2 = rand(S2, S1)
-	%b2 = rand(S2, 1)
+
+	disp(sprintf('Arquitectura %d-%d-%d', R, S1, S2));
+
+	fileErrores = fopen('errores.txt', 'w');
+
+	W1 = rand(S1, R);
+	b1 = rand(S1, 1);
+	W2 = rand(S2, S1);
+	b2 = rand(S2, 1);
 	it = 0;
+
 	tabla = tabla.';
+
 	t = t.';
+
 	tic()
-    
+
     terminar_error = 0 ;
 	while it < itmax
         err_it = 0 ;
@@ -42,36 +63,47 @@ function MLP
 			b2 = b2 - alpha*s2;
 			W1 = W1 - alpha*s1*(tabla(:, m).');
 			b1 = b1 - alpha*s1;
+			%disp(e);
             %%Calcular error
-            err_it = err_it + (transpose(e)*e) ;
+            err_it = err_it + (e.' * e) ;
 		end
 		it = it+1;
-        %%Verificar condici髇 de terminaci髇 por error.
+        %%Verificar condici贸n de terminaci贸n por error.
         err_it = err_it / Q ;
-        if error > err_it 
+        fprintf(fileErrores, '%f ', err_it);
+
+        if error > err_it
             terminar_error = 1 ;
             break;
-        end 
+        end
 	end
-	disp(toc())
+	fclose(fileErrores);
+	disp(sprintf("Tiempo de ejecucion %f", toc()));
 	a = zeros(1, Q);
+
 	for m=1:Q
 		a1 = logsig(W1*(tabla(:, m)) + b1);
 		a2 = purelin(W2*a1 + b2);
 		a(m) = a2;
 	end
-	disp(a);
-    
+
     if terminar_error > 0
-        disp('Aproximaci髇 exitosa.');
+        disp(sprintf('Aproximaci贸n exitosa en %d iteraciones.', it));
     else
-        disp('Aproximaci髇 no exitosa');
+        disp('Aproximaci贸n no exitosa');
     end
-    disp(err_it);
-    
-	figure
+    disp(sprintf("Error de iteracion %f", err_it));
+
+	%figure
+	%hold on
+	%plot(tabla, t, '* ');
+	%plot(tabla, a, 'o ', 'color', 'r');
+	%hold off
+	tablaOriginal = featureDenormalize([tabla.', t.'],  minTabla, maxTabla, muTabla, sigmaTabla );
+    tablaPredicha = featureDenormalize([tabla.', a.'], minTabla, maxTabla, muTabla, sigmaTabla );
+    figure
 	hold on
-	plot(tabla, t, '* ');
-	plot(tabla, a, 'r-');
+	plot(tablaOriginal(:, 1), tablaOriginal(:, 2), '* ');
+	plot(tablaPredicha(:, 1), tablaPredicha(:, 2), 'o ', 'color', 'r');
 	hold off
 end
